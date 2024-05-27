@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 import {
     drawGrid,
@@ -7,8 +7,10 @@ import {
     onDraw,
     onDrawEnd,
     onDrawStart,
+    fillPixel2,
 } from 'helpers/drawing';
 import { Cursors } from 'Cursors';
+import { WebsocketsContext } from 'WebsocketsContext';
 
 export const LENGTH = 720;
 
@@ -23,12 +25,16 @@ const COLOURS = [
     'FFFFFF',
 ];
 
-export const Canvas = () => {
-    const [canvasContent, setCanvasContent] = useState<Record<string, string>>(
-        {}
-    );
+export const Canvas = ({
+    initialCanvasState,
+}: {
+    initialCanvasState: Record<string, string>;
+}) => {
     const [drawing, setDrawing] = useState(false);
     const [currentColour, setCurrentColour] = useState('000000');
+
+    const { sendWSMessage, addWSMessageListener } =
+        useContext(WebsocketsContext);
 
     const ref = useRef<HTMLCanvasElement>(null);
 
@@ -37,8 +43,18 @@ export const Canvas = () => {
     }, []);
 
     useEffect(() => {
-        paintWholeCanvas(ref.current!, canvasContent);
-    }, [canvasContent]);
+        addWSMessageListener((event) => {
+            const serverMessage = JSON.parse(event.data);
+            if (serverMessage.type === 'pixelPainted') {
+                const { x, y, colour } = serverMessage.payload;
+                fillPixel2({ canvas: ref.current, x, y, colour });
+            }
+        });
+    }, [addWSMessageListener]);
+
+    useEffect(() => {
+        paintWholeCanvas(ref.current!, initialCanvasState);
+    }, [initialCanvasState]);
 
     return (
         <>
@@ -65,10 +81,23 @@ export const Canvas = () => {
                         onDrawStart(e, ref.current!, setDrawing)
                     }
                     onMouseMove={(e) =>
-                        onDraw(e, ref.current!, drawing, currentColour)
+                        onDraw({
+                            e,
+                            canvas: ref.current!,
+                            drawing,
+                            colour: currentColour,
+                            sendWSMessage,
+                        })
                     }
-                    onMouseUp={(e) => onDrawEnd(ref.current!, setDrawing)}
-                    onClick={(e) => onClick(e, ref.current!, currentColour)}
+                    onMouseUp={() => onDrawEnd(ref.current!, setDrawing)}
+                    onClick={(e) =>
+                        onClick({
+                            e,
+                            canvas: ref.current!,
+                            colour: currentColour,
+                            sendWSMessage,
+                        })
+                    }
                     style={{ border: '1px solid black' }}
                 ></canvas>
                 <Cursors canvasRef={ref} />

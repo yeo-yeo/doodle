@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from 'Canvas';
 import { WebsocketsProvider } from 'WebsocketsContext';
 
 const App = () => {
-    // establish WS connection with user details
-    // load state of canvas, other users
+    const [initialCanvasContent, setInitialCanvasContent] = useState<
+        Record<string, string>
+    >({});
 
     return (
         <>
-            <WebsocketsProvider>
+            <WebsocketsProvider setInitialCanvasContent={setInitialCanvasContent}>
                 <p>doodle</p>
-                <Canvas />
+                {/* actually want this to be a one time thing and incrementally do other updates */}
+                <Canvas canvasState={initialCanvasContent} />
             </WebsocketsProvider>
         </>
     );

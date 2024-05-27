@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import { LENGTH } from 'Canvas';
+import { WebsocketMessageType } from 'WebsocketsContext';
 
 export const onDrawStart = (
     e: MouseEvent,
@@ -16,24 +17,37 @@ export const onDrawStart = (
     ctx.beginPath();
 };
 
-export const onDraw = (
-    e: MouseEvent,
-    canvas: HTMLCanvasElement,
-    drawing: boolean,
-    colour: string
-) => {
+export const onDraw = ({
+    e,
+    canvas,
+    drawing,
+    colour,
+    sendWSMessage,
+}: {
+    e: MouseEvent;
+    canvas: HTMLCanvasElement;
+    drawing: boolean;
+    colour: string;
+    sendWSMessage: (message: WebsocketMessageType) => void;
+}) => {
     if (!drawing) {
         return;
     }
-    fillPixel(e, canvas, colour);
+    fillPixel({ e, canvas, colour, sendWSMessage });
 };
 
-export const onClick = (
-    e: MouseEvent,
-    canvas: HTMLCanvasElement,
-    colour: string
-) => {
-    fillPixel(e, canvas, colour);
+export const onClick = ({
+    e,
+    canvas,
+    colour,
+    sendWSMessage,
+}: {
+    e: MouseEvent;
+    canvas: HTMLCanvasElement;
+    colour: string;
+    sendWSMessage: (message: WebsocketMessageType) => void;
+}) => {
+    fillPixel({ e, canvas, colour, sendWSMessage });
 };
 
 export const onDrawEnd = (
@@ -49,11 +63,17 @@ export const onDrawEnd = (
 };
 
 // TODO: this shouldn't overwrite borders
-export const fillPixel = (
-    e: MouseEvent,
-    canvas: HTMLCanvasElement,
-    colour: string
-) => {
+export const fillPixel = ({
+    e,
+    canvas,
+    colour,
+    sendWSMessage,
+}: {
+    e: MouseEvent;
+    canvas: HTMLCanvasElement;
+    colour: string;
+    sendWSMessage: (message: WebsocketMessageType) => void;
+}) => {
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
@@ -73,7 +93,39 @@ export const fillPixel = (
     ctx.rect(lowerX, lowerY, 9, 9);
     ctx.fill();
 
-    // send ws event??
+    // send ws event?
+    sendWSMessage({
+        payload: { x: lowerX, y: lowerY, colour },
+        type: 'pixelPainted',
+    });
+};
+
+// todo - refactor/rename
+export const fillPixel2 = ({
+    canvas,
+    x,
+    y,
+    colour,
+}: {
+    canvas: HTMLCanvasElement | null;
+    x: number;
+    y: number;
+    colour: string;
+}) => {
+    if (!canvas) {
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return;
+    }
+
+    ctx.beginPath();
+    ctx.fillStyle = `#${colour}`;
+    ctx.rect(x, y, 9, 9);
+    ctx.fill();
 };
 
 const drawLine = (

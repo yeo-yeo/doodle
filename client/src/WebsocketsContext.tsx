@@ -1,7 +1,13 @@
 import type { ReactNode } from 'react';
-import React, { createContext, useEffect, useRef, useState } from 'react';
+import React, {
+    createContext,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
-type WebsocketMessageType = {
+export type WebsocketMessageType = {
     type: string;
     payload: any;
 };
@@ -18,12 +24,35 @@ export const WebsocketsContext = createContext<WebsocketsContextType>({
     sendWSMessage: () => {},
 });
 
-export const WebsocketsProvider = ({ children }: { children: ReactNode }) => {
+export const WebsocketsProvider = ({
+    children,
+    setInitialCanvasContent: setInitialCanvasContent,
+}: {
+    children: ReactNode;
+    setInitialCanvasContent: React.Dispatch<
+        React.SetStateAction<Record<string, string>>
+    >;
+}) => {
     const websocketConnection = useRef<WebSocket | null>(null);
     const [messageListenersToAttach, setMessageListenersToAttach] = useState<
         wsMsgCallback[]
     >([]);
 
+    const addWaitingListeners = useCallback(() => {
+        if (messageListenersToAttach.length > 0) {
+            // TODO: is there a better way to do this
+            // (does this even work?)
+            messageListenersToAttach.forEach((fn) => {
+                websocketConnection.current!.addEventListener('message', fn);
+            });
+            console.log('added listener from state');
+            setMessageListenersToAttach([]);
+        }
+        return;
+    }, [messageListenersToAttach]);
+
+    // TODO: reconnection?
+    // TODO: i think refactoring this broke the websocket setup
     useEffect(() => {
         const socket = new WebSocket('ws://localhost:8765');
 
@@ -32,26 +61,34 @@ export const WebsocketsProvider = ({ children }: { children: ReactNode }) => {
             socket.send('Connection established');
         });
 
-        // TODO: is there a better way to do this
-        messageListenersToAttach.forEach((fn) => {
-            socket.addEventListener('message', fn);
+        socket.addEventListener('message', (event) => {
+            const serverMessage = JSON.parse(event.data);
+            if (serverMessage.type === 'canvasState') {
+                console.log('setting initial state');
+                setInitialCanvasContent(serverMessage.payload);
+            }
         });
-        setMessageListenersToAttach([]);
+
+        addWaitingListeners();
 
         websocketConnection.current = socket;
+        // maybe set a piece of state to say it's ready???? then other useEffect depends on that?????
+        // or maybe there should be a usecallback that you call when it's ready??
 
         return () => websocketConnection.current?.close();
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [addWaitingListeners, setInitialCanvasContent]);
 
     const addWSMessageListener = (fn: wsMsgCallback) => {
         if (!websocketConnection.current) {
-            setMessageListenersToAttach([...messageListenersToAttach, fn]);
+            console.log('adding listener to attach');
+            setMessageListenersToAttach((prev) => [...prev, fn]);
             return;
         }
+        console.log('directly adding listener');
         websocketConnection.current.addEventListener('message', fn);
     };
+
+    console.log({ messageListenersToAttach });
 
     const sendWSMessage = (message: WebsocketMessageType) => {
         if (

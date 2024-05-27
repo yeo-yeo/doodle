@@ -28,16 +28,25 @@ def clear_cursors():
 
 async def listen(websocket):
     connections.append(websocket)
+    print('Registered new connection')
 
+    # initial canvas paint
+    await websocket.send(json.dumps({"payload": canvas, "type": "canvasState"}))
+    print('sent initial canvas')
     try:
         async for message in websocket:
             try:
                 parsed = json.loads(message)
-                # print(f'Received JSON message {parsed}')
                 if parsed["type"] == 'cursorPositions':
                     cursors[parsed["payload"]["userID"]] = {**parsed["payload"]["position"], "timestamp": int(time.time())}
                     for conn in connections:
                         await conn.send(json.dumps({"payload": cursors, "type": "cursorPositions"}))
+                if parsed["type"] == 'pixelPainted':
+                    x, y, colour = parsed["payload"].values()
+                    key = f"{x},{y}"
+                    canvas[key] = colour
+                    for conn in connections:
+                        await conn.send(json.dumps(parsed))
             except:
                 print(f'Received non-JSON message: {message}')
 
