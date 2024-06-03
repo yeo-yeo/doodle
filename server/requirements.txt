@@ -7,3 +7,4 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 websockets==12.0
 Werkzeug==3.0.3
+pyopenssl==24.1.0

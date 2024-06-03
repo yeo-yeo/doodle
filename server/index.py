@@ -98,7 +98,7 @@ def listen(ws):
 
 
 def create_server(port=8080):
-    app.run(port=port, host="0.0.0.0")
+    app.run(port=port, host="0.0.0.0", ssl_context='adhoc')
 
 
 if __name__ == "__main__":
