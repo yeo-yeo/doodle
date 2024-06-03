@@ -1,19 +1,19 @@
-FROM python:3.12.1
 
-RUN pwd && ls
+FROM nikolaik/python-nodejs
 
-# docker will not re-pip install if requirements.txt doesn't change
 WORKDIR /code
-ADD ./server/requirements.txt /code/requirements.txt
-RUN pip install -r requirements.txt
-
-FROM node:latest
-WORKDIR /client
+ADD . /code
+WORKDIR /code/client
+RUN pwd
+RUN dir
 RUN npm i
 RUN npm run build
 
+# docker will not re-pip install if requirements.txt doesn't change
 WORKDIR /code
-
-ADD . /code
+RUN pip install -r server/requirements.txt --quiet
+RUN ls
+RUN pwd
+RUN dir
 
 CMD ["python", "server/index.py"]
