@@ -66,7 +66,7 @@ export const WebsocketsProvider = ({
     }, [messageListenersToAttach]);
 
     const connect = () => {
-        const socket = new WebSocket('wss://doodle.rcdis.co:8080/ws');
+        const socket = new WebSocket('ws://doodle.rcdis.co:8080/ws');
 
         // Connection opened
         socket.addEventListener('open', () => {
