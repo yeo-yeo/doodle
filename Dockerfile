@@ -4,7 +4,7 @@ FROM nikolaik/python-nodejs
 WORKDIR /code
 ADD . /code
 WORKDIR /code/client
-RUN npm i
+RUN npm --verbose install
 RUN npm run build
 
 # docker will not re-pip install if requirements.txt doesn't change
