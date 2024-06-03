@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
 import os
+from pathlib import Path
 from pprint import pprint
 from flask import Flask, send_from_directory
 from flask_sock import Sock
 import time
 import json
 
-app = Flask(__name__, static_folder="/code/client/public")
+current_dir = Path(__file__).resolve().parent
+app = Flask(__name__, static_folder=current_dir.parent / "client" / "public")
 sock = Sock(app)
 
 
