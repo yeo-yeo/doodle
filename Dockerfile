@@ -11,8 +11,7 @@ RUN npm run build
 
 FROM python:3.12.1
 WORKDIR /code
-COPY --from=build /code/client/public /code/client/public
-ADD . /code
+COPY --from=build /code /code
 RUN pip install -r server/requirements.txt --quiet
 
 WORKDIR /code/client/public
