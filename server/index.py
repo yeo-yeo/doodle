@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 
-# a connection establishes the id of a user
-# and then receives x,y of user's cursor
-# and sends x,ys of other users' cursors
-# listens for colour setting events, broadcasts
-
-# import requests
 from flask import Flask, send_from_directory
-# from dotenv import load_dotenv
 import os
-
-# load_dotenv()  # take environment variables from .env.
 
 app = Flask(__name__, static_folder='../client/public')
 

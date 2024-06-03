@@ -1,3 +1,4 @@
 .DS_Store
 /client/node_modules
-/client/public
+/client/public/**/*.js
+/client/public/**/*.map

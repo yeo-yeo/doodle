@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 import asyncio
-import threading
 import time
 import json
-from websockets.server import serve
-
+import websockets
 
 # to test: run `python3 -m websockets ws://localhost:8765/` and send message in interactive terminal
 
@@ -15,7 +13,6 @@ cursors = {}
 
 canvas = {}
 
-# this seems a bit cumbersome - better to have redis and ttl
 def clear_cursors():
     try:
         for key in cursors:
@@ -26,29 +23,44 @@ def clear_cursors():
         # (not scalable)
         pass
 
+async def broadcast(message):
+    for conn in connections:
+        await conn.send(json.dumps(message)) 
+
 async def listen(websocket):
     connections.append(websocket)
     print('Registered new connection')
 
     # initial canvas paint
     await websocket.send(json.dumps({"payload": canvas, "type": "canvasState"}))
-    print('sent initial canvas')
+
     try:
         async for message in websocket:
-            try:
+            # try:
+                
                 parsed = json.loads(message)
                 if parsed["type"] == 'cursorPositions':
                     cursors[parsed["payload"]["userID"]] = {**parsed["payload"]["position"], "timestamp": int(time.time())}
-                    for conn in connections:
-                        await conn.send(json.dumps({"payload": cursors, "type": "cursorPositions"}))
-                if parsed["type"] == 'pixelPainted':
+                    await broadcast({"payload": cursors, "type": "cursorPositions"})
+                # elif parsed["type"] == 'removeCursor':
+                #     if cursors[parsed["payload"]["userID"]]:
+                #         del cursors[parsed["payload"]["userID"]]
+                #     await broadcast(parsed)
+                elif parsed["type"] == 'resetCanvas':
+                    canvas.clear()
+                    await broadcast(parsed)
+                elif parsed["type"] == 'pixelPainted':
                     x, y, colour = parsed["payload"].values()
                     key = f"{x},{y}"
                     canvas[key] = colour
-                    for conn in connections:
-                        await conn.send(json.dumps(parsed))
-            except:
-                print(f'Received non-JSON message: {message}')
+                    await broadcast(parsed)
+                else:
+                    print(f'Received unknown message {message}')
+            # except:
+            #     print(f'Received non-JSON message: {message}')
+
+    except websockets.exceptions.ConnectionClosedError:
+        print("Client disconnected unexpectedly")
 
     finally:
         connections.remove(websocket) 
@@ -59,7 +71,7 @@ async def set_timeout(seconds, fn):
         fn()
 
 async def open_server():
-    async with serve(listen, "localhost", 8765):
+    async with websockets.serve(listen, "localhost", 8765):
         print('Websocket server listening on port 8765')
         await asyncio.get_running_loop().create_future()
 

@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { LENGTH } from 'Canvas';
-import { WebsocketMessageType } from 'WebsocketsContext';
+import type { WebsocketMessageType } from 'WebsocketsContext';
 
 export const onDrawStart = (
     e: MouseEvent,
@@ -33,6 +33,7 @@ export const onDraw = ({
     if (!drawing) {
         return;
     }
+    // TODO: try and fill in gaps when mouse is continually held down but moved fast?
     fillPixel({ e, canvas, colour, sendWSMessage });
 };
 
@@ -85,15 +86,14 @@ export const fillPixel = ({
     const xPos = e.clientX - elPosition.x;
     const yPos = e.clientY - elPosition.y;
 
-    const lowerX = Math.floor(xPos / 10) * 10;
-    const lowerY = Math.floor(yPos / 10) * 10;
+    const lowerX = Math.floor(xPos / 6) * 6;
+    const lowerY = Math.floor(yPos / 6) * 6;
 
     ctx.beginPath();
     ctx.fillStyle = `#${colour}`;
-    ctx.rect(lowerX, lowerY, 9, 9);
+    ctx.rect(lowerX, lowerY, 5, 5);
     ctx.fill();
 
-    // send ws event?
     sendWSMessage({
         payload: { x: lowerX, y: lowerY, colour },
         type: 'pixelPainted',
@@ -124,7 +124,7 @@ export const fillPixel2 = ({
 
     ctx.beginPath();
     ctx.fillStyle = `#${colour}`;
-    ctx.rect(x, y, 9, 9);
+    ctx.rect(x, y, 5, 5);
     ctx.fill();
 };
 
@@ -151,12 +151,12 @@ export const drawGrid = (canvas: HTMLCanvasElement) => {
     ctx.strokeStyle = '#BBBBBB';
 
     // vertical grid lines
-    for (let i = 0; i < LENGTH; i += 10) {
+    for (let i = 0; i < LENGTH; i += 6) {
         drawLine(ctx, i, 0, i, LENGTH);
     }
 
     // horizontal grid lines
-    for (let i = 0; i < LENGTH; i += 10) {
+    for (let i = 0; i < LENGTH; i += 6) {
         drawLine(ctx, 0, i, LENGTH, i);
     }
 };
@@ -176,9 +176,18 @@ export const paintWholeCanvas = (
 
         ctx.beginPath();
         ctx.fillStyle = `#${state[coord]}`;
-        ctx.rect(Number(x), Number(y), 9, 9);
+        ctx.rect(Number(x), Number(y), 5, 5);
         ctx.fill();
     }
 };
 
-export const updatePixel = () => {};
+export const resetLocalCanvas = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return;
+    }
+
+    ctx.reset();
+    drawGrid(canvas);
+};

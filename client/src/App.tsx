@@ -10,10 +10,10 @@ const App = () => {
 
     return (
         <>
-            <WebsocketsProvider setInitialCanvasContent={setInitialCanvasContent}>
-                <p>doodle</p>
-                {/* actually want this to be a one time thing and incrementally do other updates */}
-                <Canvas canvasState={initialCanvasContent} />
+            <WebsocketsProvider
+                setInitialCanvasContent={setInitialCanvasContent}
+            >
+                <Canvas initialCanvasState={initialCanvasContent} />
             </WebsocketsProvider>
         </>
     );

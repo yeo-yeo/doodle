@@ -8,21 +8,30 @@ import {
     onDrawEnd,
     onDrawStart,
     fillPixel2,
+    resetLocalCanvas,
 } from 'helpers/drawing';
 import { Cursors } from 'Cursors';
-import { WebsocketsContext } from 'WebsocketsContext';
+import { ReadyState, WebsocketsContext } from 'WebsocketsContext';
 
 export const LENGTH = 720;
 
 const COLOURS = [
+    'ffffff',
+    'fcf305',
+    'ff6402',
+    'dd0806',
+    'f20884',
+    '4600a5',
+    '0000d4',
+    '02abea',
+    '1fb714',
+    '006411',
+    '562c05',
+    '90713a',
+    'c0c0c0',
+    '808080',
+    '404040',
     '000000',
-    'FF0000',
-    'FFFF00',
-    '00FF00',
-    '00FFFF',
-    '0000FF',
-    'FF00FF',
-    'FFFFFF',
 ];
 
 export const Canvas = ({
@@ -33,7 +42,7 @@ export const Canvas = ({
     const [drawing, setDrawing] = useState(false);
     const [currentColour, setCurrentColour] = useState('000000');
 
-    const { sendWSMessage, addWSMessageListener } =
+    const { sendWSMessage, addWSMessageListener, readyState } =
         useContext(WebsocketsContext);
 
     const ref = useRef<HTMLCanvasElement>(null);
@@ -50,15 +59,36 @@ export const Canvas = ({
                 fillPixel2({ canvas: ref.current, x, y, colour });
             }
         });
+        addWSMessageListener((event) => {
+            const serverMessage = JSON.parse(event.data);
+            if (serverMessage.type === 'resetCanvas') {
+                resetLocalCanvas(ref.current!);
+            }
+        });
     }, [addWSMessageListener]);
 
     useEffect(() => {
-        paintWholeCanvas(ref.current!, initialCanvasState);
-    }, [initialCanvasState]);
+        if (readyState === ReadyState.OPEN) {
+            paintWholeCanvas(ref.current!, initialCanvasState);
+        }
+    }, [initialCanvasState, readyState]);
 
     return (
-        <>
-            <div style={{ display: 'flex' }}>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    margin: '4px',
+                    flexWrap: 'wrap',
+                    width: '260px',
+                }}
+            >
                 {COLOURS.map((colour) => (
                     <div
                         key={colour}
@@ -102,6 +132,14 @@ export const Canvas = ({
                 ></canvas>
                 <Cursors canvasRef={ref} />
             </div>
-        </>
+            <button
+                onClick={() => {
+                    sendWSMessage({ type: 'resetCanvas', payload: {} });
+                    resetLocalCanvas(ref.current!);
+                }}
+            >
+                Reset canvas
+            </button>
+        </div>
     );
 };
