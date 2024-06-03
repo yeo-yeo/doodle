@@ -66,7 +66,7 @@ export const WebsocketsProvider = ({
     }, [messageListenersToAttach]);
 
     const connect = () => {
-        const socket = new WebSocket('ws://localhost:8765');
+        const socket = new WebSocket('ws://127.0.0.1:3000/ws');
 
         // Connection opened
         socket.addEventListener('open', () => {
