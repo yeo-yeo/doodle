@@ -1,5 +1,7 @@
 
-FROM nikolaik/python-nodejs
+# FROM nikolaik/python-nodejs
+
+FROM node:latest
 
 WORKDIR /code
 ADD . /code
