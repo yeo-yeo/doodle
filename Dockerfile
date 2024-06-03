@@ -1,7 +1,7 @@
 
 # FROM nikolaik/python-nodejs
 
-FROM node:latest
+FROM node:latest as build
 
 WORKDIR /code
 ADD . /code
@@ -9,7 +9,9 @@ WORKDIR /code/client
 RUN npm --verbose install
 RUN npm run build
 
-# docker will not re-pip install if requirements.txt doesn't change
+FROM python:3.12.1
+COPY --from=build /code/client/public /code/client
+ADD . /code
 WORKDIR /code
 RUN pip install -r server/requirements.txt --quiet
 

@@ -7,7 +7,7 @@ from flask_sock import Sock
 import time
 import json
 
-app = Flask(__name__, static_folder="../client/public")
+app = Flask(__name__, static_folder="/code/client/public")
 sock = Sock(app)
 
 
