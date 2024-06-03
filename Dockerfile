@@ -6,7 +6,7 @@ FROM node:latest as build
 WORKDIR /code
 ADD . /code
 WORKDIR /code/client
-RUN npm --verbose install
+RUN npm install
 RUN npm run build
 
 FROM python:3.12.1
