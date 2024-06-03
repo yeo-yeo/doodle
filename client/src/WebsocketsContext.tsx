@@ -29,7 +29,7 @@ type WebsocketsContextType = {
 };
 
 export const WebsocketsContext = createContext<WebsocketsContextType>({
-    addWSMessageListener: (fn: wsMsgCallback) => {},
+    addWSMessageListener: () => {},
     sendWSMessage: () => {},
     readyState: -1,
 });
@@ -49,32 +49,41 @@ export const WebsocketsProvider = ({
     const [messageListenersToAttach, setMessageListenersToAttach] = useState<
         wsMsgCallback[]
     >([]);
+    const [attachedListeners, setAttachedListeners] = useState<wsMsgCallback[]>(
+        []
+    );
 
     const addWaitingListeners = useCallback(() => {
         if (messageListenersToAttach.length > 0) {
-            // TODO: is there a better way to do this
-            // (does this even work?)
             messageListenersToAttach.forEach((fn) => {
                 websocketConnection.current!.addEventListener('message', fn);
             });
+            // save them in case we reconnect and need to re-add
+            setAttachedListeners(messageListenersToAttach);
             setMessageListenersToAttach([]);
         }
         return;
     }, [messageListenersToAttach]);
 
-    // TODO: reconnection?
-    useEffect(() => {
+    const connect = () => {
         const socket = new WebSocket('ws://localhost:8765');
 
         // Connection opened
         socket.addEventListener('open', () => {
             setWebsocketReadyState(ReadyState.OPEN);
             // socket.send('Connection established');
+
+            // ?? (re)add listners here
         });
 
         socket.addEventListener('close', () => {
             setWebsocketReadyState(ReadyState.CLOSED);
-            socket.send('Connection closed');
+
+            //
+        });
+
+        socket.addEventListener('error', () => {
+            setWebsocketReadyState(ReadyState.CLOSED);
         });
 
         socket.addEventListener('message', (event) => {
@@ -85,7 +94,31 @@ export const WebsocketsProvider = ({
         });
 
         websocketConnection.current = socket;
-        setWebsocketReadyState(socket.readyState);
+        return socket.readyState;
+    };
+
+    // TODO this is a mess
+    const reconnect = () => {
+        if (websocketConnection?.current?.readyState === ReadyState.OPEN) {
+            return;
+        }
+
+        const socketState = connect();
+
+        if (
+            socketState === ReadyState.CLOSED ||
+            socketState === ReadyState.CONNECTING
+        ) {
+            setTimeout(() => reconnect(), 3000);
+        }
+    };
+
+    // Initial connection
+    useEffect(() => {
+        if (!websocketConnection.current) {
+            const socketState = connect();
+            setWebsocketReadyState(socketState);
+        }
 
         return () => websocketConnection.current?.close();
     }, [setInitialCanvasContent]);
@@ -93,6 +126,10 @@ export const WebsocketsProvider = ({
     useEffect(() => {
         if (websocketReadyState === ReadyState.OPEN) {
             addWaitingListeners();
+        }
+
+        if (websocketReadyState === ReadyState.CLOSED) {
+            reconnect();
         }
     }, [addWaitingListeners, websocketReadyState]);
 
