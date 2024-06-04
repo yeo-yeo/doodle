@@ -11,6 +11,8 @@ current_dir = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=current_dir.parent / "client" / "public")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# lol hiiiiiii
+
 
 # Serve React App
 @app.route("/", defaults={"path": ""})
@@ -76,6 +78,9 @@ def handle_message(message):
         print(f"Received unknown message {message}")
 
 
+# hiiiiii
+# hii
+
 if __name__ == "__main__":
     # default 5000 is already in use by Apple AirPlay
-    socketio.run(app, port=8080)
+    socketio.run(app, port=8080, host="0.0.0.0")
