@@ -4,13 +4,16 @@ import os
 from pathlib import Path
 from pprint import pprint
 from flask import Flask, send_from_directory
-from flask_sock import Sock
+
+# from flask_sock import Sock
 import time
 import json
+from flask_socketio import SocketIO, send, emit
 
 current_dir = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=current_dir.parent / "client" / "public")
-sock = Sock(app)
+# sock = Sock(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 # Serve React App
@@ -22,8 +25,6 @@ def serve(path):
     else:
         return send_from_directory(app.static_folder, "index.html")
 
-
-connections = []
 
 cursors = {}
 
@@ -42,55 +43,49 @@ def clear_cursors():
 
 
 def broadcast(message):
-    for conn in connections:
-        conn.send(json.dumps(message))
+    send(json.dumps(message), json=True, broadcast=True)
 
 
-@sock.route("/ws")
-def listen(ws):
-    while True:
-        if ws not in connections:
-            connections.append(ws)
-            # print("Registered new connection")
+@socketio.on("connect")
+def connect():
+    print("😀 Connection added!")
+    send(json.dumps({"payload": canvas, "type": "canvasState"}), json=True)
 
-            # initial canvas paint
-            ws.send(json.dumps({"payload": canvas, "type": "canvasState"}))
 
-        data = ws.receive()
-        # pprint(data)
-        # ws.send(data)
+@socketio.on("disconnect")
+def test_disconnect():
+    print("Client disconnected")
 
-        if data:
-            parsed = json.loads(data)
-            if parsed["type"] == "cursorPositions":
-                cursors[parsed["payload"]["userID"]] = {
-                    **parsed["payload"]["position"],
-                    "timestamp": int(time.time()),
-                }
-                broadcast({"payload": cursors, "type": "cursorPositions"})
-            # elif parsed["type"] == 'removeCursor':
-            #     if cursors[parsed["payload"]["userID"]]:
-            #         del cursors[parsed["payload"]["userID"]]
-            #     await broadcast(parsed)
-            elif parsed["type"] == "resetCanvas":
-                canvas.clear()
-                broadcast(parsed)
-            elif parsed["type"] == "pixelPainted":
-                x, y, colour = parsed["payload"].values()
-                key = f"{x},{y}"
-                canvas[key] = colour
-                broadcast(parsed)
-            else:
-                print(f"Received unknown message {data}")
-        else:
-            print("no data??")
 
-        # TODO: how do we know when it's closed?
-        #    connections.remove(ws)
+@socketio.on("json")
+def handle_message(message):
+
+    parsed = json.loads(message)
+    if parsed["type"] == "cursorPositions":
+        cursors[parsed["payload"]["userID"]] = {
+            **parsed["payload"]["position"],
+            "timestamp": int(time.time()),
+        }
+        broadcast({"payload": cursors, "type": "cursorPositions"})
+    # elif parsed["type"] == 'removeCursor':
+    #     if cursors[parsed["payload"]["userID"]]:
+    #         del cursors[parsed["payload"]["userID"]]
+    #     await broadcast(parsed)
+    elif parsed["type"] == "resetCanvas":
+        canvas.clear()
+        broadcast(parsed)
+    elif parsed["type"] == "pixelPainted":
+        x, y, colour = parsed["payload"].values()
+        key = f"{x},{y}"
+        canvas[key] = colour
+        broadcast(parsed)
+    else:
+        print(f"Received unknown message {message}")
 
 
 def create_server(port=8080):
-    app.run(port=port, host="0.0.0.0")
+    socketio.run(app, port=port)
+    # app.run(port=port, host="0.0.0.0")
 
 
 if __name__ == "__main__":

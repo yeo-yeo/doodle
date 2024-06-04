@@ -6,6 +6,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
+import { Socket, io } from 'socket.io-client';
 
 export type WebsocketMessageType = {
     type: string;
@@ -43,7 +44,7 @@ export const WebsocketsProvider = ({
         React.SetStateAction<Record<string, string>>
     >;
 }) => {
-    const websocketConnection = useRef<WebSocket | null>(null);
+    const websocketConnection = useRef<Socket | null>(null);
     const [websocketReadyState, setWebsocketReadyState] =
         useState<ReadyState>(-1);
     const [messageListenersToAttach, setMessageListenersToAttach] = useState<
@@ -65,48 +66,34 @@ export const WebsocketsProvider = ({
         return;
     }, [messageListenersToAttach]);
 
-    const WS_URL =
-        window.location.href.includes('localhost') ||
-        window.location.href.includes('127.0.0.1')
-            ? 'ws://localhost:8080/ws'
-            : 'wss://doodle.rcdis.co/ws';
+    // const WS_URL =
+    //     window.location.href.includes('localhost') ||
+    //     window.location.href.includes('127.0.0.1')
+    //         ? 'ws://localhost:8080'
+    //         : 'wss://doodle.rcdis.co';
 
     const connect = useCallback(() => {
-        const socket = new WebSocket(WS_URL);
+        const socket = io();
 
-        // Connection opened
-        socket.addEventListener('open', () => {
+        socket.on('connect', () => {
             setWebsocketReadyState(ReadyState.OPEN);
-            // socket.send('Connection established');
-
-            // ?? (re)add listners here
         });
 
-        socket.addEventListener('close', () => {
+        socket.on('disconnect', () => {
             setWebsocketReadyState(ReadyState.CLOSED);
-
-            console.log('on close fired');
         });
 
-        socket.addEventListener('error', () => {
-            setWebsocketReadyState(ReadyState.CLOSED);
-
-            console.log(
-                'on error fired. ready state is',
-                websocketConnection.current?.readyState
-            );
-        });
-
-        socket.addEventListener('message', (event) => {
-            const serverMessage = JSON.parse(event.data);
+        socket.on('json', (message) => {
+            const serverMessage = JSON.parse(message);
             if (serverMessage.type === 'canvasState') {
                 setInitialCanvasContent(serverMessage.payload);
             }
         });
 
         websocketConnection.current = socket;
-        return socket.readyState;
-    }, [WS_URL, setInitialCanvasContent]);
+        // return socket.readyState;
+        return 1;
+    }, [setInitialCanvasContent]);
 
     // TODO this is a mess
     const reconnect = useCallback(() => {
@@ -151,15 +138,12 @@ export const WebsocketsProvider = ({
             setMessageListenersToAttach((prev) => [...prev, fn]);
             return;
         }
-        websocketConnection.current.addEventListener('message', fn);
+        websocketConnection.current.on('json', fn);
     };
 
     const sendWSMessage = (message: WebsocketMessageType) => {
-        if (
-            websocketConnection.current &&
-            websocketConnection.current.readyState === 1
-        ) {
-            websocketConnection.current.send(JSON.stringify(message));
+        if (websocketConnection.current) {
+            websocketConnection.current.emit('json', JSON.stringify(message));
         }
     };
 

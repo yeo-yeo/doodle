@@ -102,7 +102,7 @@ export const Cursors = ({
         document.addEventListener('mousemove', debouncedComputeCursorPositions);
 
         addWSMessageListener((event) => {
-            const serverMessage = JSON.parse(event.data);
+            const serverMessage = JSON.parse(event);
             if (serverMessage.type === 'cursorPositions') {
                 setCursorPositions(serverMessage.payload);
             }
@@ -110,7 +110,7 @@ export const Cursors = ({
 
         // not sure this is really necessary now i've just stopped rendering ones out of bounds
         addWSMessageListener((event) => {
-            const serverMessage = JSON.parse(event.data);
+            const serverMessage = JSON.parse(event);
             if (serverMessage.type === 'removeCursor') {
                 // filter out that userid
                 const newCursors = { ...cursorPostitions };

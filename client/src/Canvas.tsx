@@ -55,14 +55,14 @@ export const Canvas = ({
 
     useEffect(() => {
         addWSMessageListener((event) => {
-            const serverMessage = JSON.parse(event.data);
+            const serverMessage = JSON.parse(event);
             if (serverMessage.type === 'pixelPainted') {
                 const { x, y, colour } = serverMessage.payload;
                 fillPixel2({ canvas: ref.current, x, y, colour });
             }
         });
         addWSMessageListener((event) => {
-            const serverMessage = JSON.parse(event.data);
+            const serverMessage = JSON.parse(event);
             if (serverMessage.type === 'resetCanvas') {
                 resetLocalCanvas(ref.current!);
             }
