@@ -71,7 +71,7 @@ export const WebsocketsProvider = ({
             ? 'ws://localhost:8080/ws'
             : 'wss://doodle.rcdis.co/ws';
 
-    const connect = () => {
+    const connect = useCallback(() => {
         const socket = new WebSocket(WS_URL);
 
         // Connection opened
@@ -85,11 +85,16 @@ export const WebsocketsProvider = ({
         socket.addEventListener('close', () => {
             setWebsocketReadyState(ReadyState.CLOSED);
 
-            //
+            console.log('on close fired');
         });
 
         socket.addEventListener('error', () => {
             setWebsocketReadyState(ReadyState.CLOSED);
+
+            console.log(
+                'on error fired. ready state is',
+                websocketConnection.current?.readyState
+            );
         });
 
         socket.addEventListener('message', (event) => {
@@ -101,10 +106,10 @@ export const WebsocketsProvider = ({
 
         websocketConnection.current = socket;
         return socket.readyState;
-    };
+    }, [WS_URL, setInitialCanvasContent]);
 
     // TODO this is a mess
-    const reconnect = () => {
+    const reconnect = useCallback(() => {
         if (websocketConnection?.current?.readyState === ReadyState.OPEN) {
             return;
         }
@@ -117,7 +122,7 @@ export const WebsocketsProvider = ({
         ) {
             setTimeout(() => reconnect(), 3000);
         }
-    };
+    }, [connect]);
 
     // Initial connection
     useEffect(() => {
@@ -126,8 +131,10 @@ export const WebsocketsProvider = ({
             setWebsocketReadyState(socketState);
         }
 
+        // bug in dev mode?? https://github.com/miguelgrinberg/flask-sock/issues/70
+        // commenting this out doesnt fix it though
         return () => websocketConnection.current?.close();
-    }, [setInitialCanvasContent]);
+    }, [connect, setInitialCanvasContent]);
 
     useEffect(() => {
         if (websocketReadyState === ReadyState.OPEN) {
@@ -137,7 +144,7 @@ export const WebsocketsProvider = ({
         if (websocketReadyState === ReadyState.CLOSED) {
             reconnect();
         }
-    }, [addWaitingListeners, websocketReadyState]);
+    }, [addWaitingListeners, reconnect, websocketReadyState]);
 
     const addWSMessageListener = (fn: wsMsgCallback) => {
         if (!websocketConnection.current) {

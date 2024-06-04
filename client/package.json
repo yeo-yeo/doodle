@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "build": "esbuild src/App.tsx --bundle --sourcemap --outfile=public/bundle.js",
-        "watch": "http-server & esbuild src/App.tsx --bundle --sourcemap --outfile=public/bundle.js --watch",
+        "watch": "esbuild src/App.tsx --bundle --sourcemap --outfile=public/bundle.js --watch",
         "lint": "eslint ."
     },
     "eslintIgnore": [

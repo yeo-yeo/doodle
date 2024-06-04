@@ -34,6 +34,8 @@ const COLOURS = [
     '000000',
 ];
 
+export type Pixel = { x: number; y: number; colour: string };
+
 export const Canvas = ({
     initialCanvasState,
 }: {
@@ -72,6 +74,8 @@ export const Canvas = ({
             paintWholeCanvas(ref.current!, initialCanvasState);
         }
     }, [initialCanvasState, readyState]);
+
+    const lastPixelChange = useRef<Pixel | null>(null);
 
     return (
         <div
@@ -117,6 +121,7 @@ export const Canvas = ({
                             drawing,
                             colour: currentColour,
                             sendWSMessage,
+                            lastPixelChange: lastPixelChange,
                         })
                     }
                     onMouseUp={() => onDrawEnd(ref.current!, setDrawing)}
@@ -126,6 +131,7 @@ export const Canvas = ({
                             canvas: ref.current!,
                             colour: currentColour,
                             sendWSMessage,
+                            lastPixelChange: lastPixelChange,
                         })
                     }
                     style={{ border: '1px solid black' }}

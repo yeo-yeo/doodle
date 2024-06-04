@@ -4,6 +4,7 @@ import React, {
     useState,
     useContext,
     useCallback,
+    useRef,
 } from 'react';
 import { Cursor } from 'Cursor';
 import { WebsocketsContext } from 'WebsocketsContext';
@@ -46,10 +47,14 @@ export const Cursors = ({
     const { sendWSMessage, addWSMessageListener } =
         useContext(WebsocketsContext);
 
+    type cursorPosition = { x: number; y: number };
+
     // { userID: {x, y} }
     const [cursorPostitions, setCursorPositions] = useState<
-        Record<string, Record<string, any>>
+        Record<string, cursorPosition>
     >({});
+
+    const myCursorPosition = useRef<cursorPosition>({ x: 0, y: 0 });
 
     const reportCursorPosition = useCallback(
         (e: MouseEvent) => {
@@ -61,6 +66,15 @@ export const Cursors = ({
 
             const x = e.clientX - elPosition.x;
             const y = e.clientY - elPosition.y;
+
+            if (
+                x === myCursorPosition.current.x &&
+                y === myCursorPosition.current.y
+            ) {
+                return;
+            }
+
+            myCursorPosition.current = { x, y };
 
             // Only report position if cursor is over canvas - otherwise hide it
             // if (x >= 0 && x <= LENGTH && y >= 0 && y <= LENGTH) {

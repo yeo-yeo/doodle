@@ -33,7 +33,7 @@ canvas = {}
 def clear_cursors():
     try:
         for key in cursors:
-            if cursors[key]["timestamp"] < int(time.time()) - 5:
+            if cursors[key]["timestamp"] < int(time.time()) - 10:
                 del cursors[key]
     except:
         # error thrown if a new cursor is added while it's iterating - just ignore that
@@ -51,7 +51,7 @@ def listen(ws):
     while True:
         if ws not in connections:
             connections.append(ws)
-            print("Registered new connection")
+            # print("Registered new connection")
 
             # initial canvas paint
             ws.send(json.dumps({"payload": canvas, "type": "canvasState"}))
@@ -60,39 +60,32 @@ def listen(ws):
         # pprint(data)
         # ws.send(data)
 
-        try:
-            if data:
-                # try:
+        if data:
+            parsed = json.loads(data)
+            if parsed["type"] == "cursorPositions":
+                cursors[parsed["payload"]["userID"]] = {
+                    **parsed["payload"]["position"],
+                    "timestamp": int(time.time()),
+                }
+                broadcast({"payload": cursors, "type": "cursorPositions"})
+            # elif parsed["type"] == 'removeCursor':
+            #     if cursors[parsed["payload"]["userID"]]:
+            #         del cursors[parsed["payload"]["userID"]]
+            #     await broadcast(parsed)
+            elif parsed["type"] == "resetCanvas":
+                canvas.clear()
+                broadcast(parsed)
+            elif parsed["type"] == "pixelPainted":
+                x, y, colour = parsed["payload"].values()
+                key = f"{x},{y}"
+                canvas[key] = colour
+                broadcast(parsed)
+            else:
+                print(f"Received unknown message {data}")
+        else:
+            print("no data??")
 
-                parsed = json.loads(data)
-                if parsed["type"] == "cursorPositions":
-                    cursors[parsed["payload"]["userID"]] = {
-                        **parsed["payload"]["position"],
-                        "timestamp": int(time.time()),
-                    }
-                    broadcast({"payload": cursors, "type": "cursorPositions"})
-                # elif parsed["type"] == 'removeCursor':
-                #     if cursors[parsed["payload"]["userID"]]:
-                #         del cursors[parsed["payload"]["userID"]]
-                #     await broadcast(parsed)
-                elif parsed["type"] == "resetCanvas":
-                    canvas.clear()
-                    broadcast(parsed)
-                elif parsed["type"] == "pixelPainted":
-                    x, y, colour = parsed["payload"].values()
-                    key = f"{x},{y}"
-                    canvas[key] = colour
-                    broadcast(parsed)
-                else:
-                    print(f"Received unknown message {data}")
-            # except:
-            #     print(f'Received non-JSON message: {message}')
-
-        # except ws.exceptions.ConnectionClosedError:
-        # print("Client disconnected unexpectedly")
-
-        finally:
-            pass
+        # TODO: how do we know when it's closed?
         #    connections.remove(ws)
 
 

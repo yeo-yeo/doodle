@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react';
+import type { Pixel } from 'Canvas';
 import { LENGTH } from 'Canvas';
 import type { WebsocketMessageType } from 'WebsocketsContext';
 
@@ -23,18 +24,20 @@ export const onDraw = ({
     drawing,
     colour,
     sendWSMessage,
+    lastPixelChange,
 }: {
     e: MouseEvent;
     canvas: HTMLCanvasElement;
     drawing: boolean;
     colour: string;
     sendWSMessage: (message: WebsocketMessageType) => void;
+    lastPixelChange: React.MutableRefObject<Pixel | null>;
 }) => {
     if (!drawing) {
         return;
     }
     // TODO: try and fill in gaps when mouse is continually held down but moved fast?
-    fillPixel({ e, canvas, colour, sendWSMessage });
+    fillPixel({ e, canvas, colour, sendWSMessage, lastPixelChange });
 };
 
 export const onClick = ({
@@ -42,13 +45,15 @@ export const onClick = ({
     canvas,
     colour,
     sendWSMessage,
+    lastPixelChange,
 }: {
     e: MouseEvent;
     canvas: HTMLCanvasElement;
     colour: string;
     sendWSMessage: (message: WebsocketMessageType) => void;
+    lastPixelChange: React.MutableRefObject<Pixel | null>;
 }) => {
-    fillPixel({ e, canvas, colour, sendWSMessage });
+    fillPixel({ e, canvas, colour, sendWSMessage, lastPixelChange });
 };
 
 export const onDrawEnd = (
@@ -69,11 +74,13 @@ export const fillPixel = ({
     canvas,
     colour,
     sendWSMessage,
+    lastPixelChange,
 }: {
     e: MouseEvent;
     canvas: HTMLCanvasElement;
     colour: string;
     sendWSMessage: (message: WebsocketMessageType) => void;
+    lastPixelChange: React.MutableRefObject<Pixel | null>;
 }) => {
     const ctx = canvas.getContext('2d');
 
@@ -94,6 +101,16 @@ export const fillPixel = ({
     ctx.rect(lowerX, lowerY, 5, 5);
     ctx.fill();
 
+    if (
+        lowerX === lastPixelChange.current?.x &&
+        lowerY === lastPixelChange.current?.y &&
+        colour === lastPixelChange.current?.colour
+    ) {
+        return;
+    }
+
+    lastPixelChange.current = { x: lowerX, y: lowerY, colour };
+
     sendWSMessage({
         payload: { x: lowerX, y: lowerY, colour },
         type: 'pixelPainted',
@@ -101,6 +118,7 @@ export const fillPixel = ({
 };
 
 // todo - refactor/rename
+// used to edit pixel because other user has painted it (i.e. triggered by ws message)
 export const fillPixel2 = ({
     canvas,
     x,
