@@ -50,7 +50,6 @@ def broadcast(message):
 def listen(ws):
     while True:
         if ws not in connections:
-            print("HIT WS ENDPOINT")
             connections.append(ws)
             print("Registered new connection")
 
@@ -58,7 +57,7 @@ def listen(ws):
             ws.send(json.dumps({"payload": canvas, "type": "canvasState"}))
 
         data = ws.receive()
-        pprint(data)
+        # pprint(data)
         # ws.send(data)
 
         try:

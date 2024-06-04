@@ -65,8 +65,14 @@ export const WebsocketsProvider = ({
         return;
     }, [messageListenersToAttach]);
 
+    const WS_URL =
+        window.location.href.includes('localhost') ||
+        window.location.href.includes('127.0.0.1')
+            ? 'ws://localhost:8080/ws'
+            : 'wss://doodle.rcdis.co:8080/ws';
+
     const connect = () => {
-        const socket = new WebSocket('ws://doodle.rcdis.co:8080/ws');
+        const socket = new WebSocket(WS_URL);
 
         // Connection opened
         socket.addEventListener('open', () => {
