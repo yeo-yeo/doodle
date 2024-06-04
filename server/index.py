@@ -27,9 +27,7 @@ def serve(path):
 
 
 cursors = {}
-
 canvas = {}
-
 
 def clear_cursors():
     try:
@@ -83,12 +81,6 @@ def handle_message(message):
         print(f"Received unknown message {message}")
 
 
-def create_server(port=8080):
-    # todo: is there a way to avoid the unsage thing????
-    socketio.run(app, port=port, allow_unsafe_werkzeug=True)
-    # app.run(port=port, host="0.0.0.0")
-
-
 if __name__ == "__main__":
     # default 5000 is already in use by Apple AirPlay
-    create_server()
+    socketio.run(app, port=8080)
