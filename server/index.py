@@ -84,7 +84,8 @@ def handle_message(message):
 
 
 def create_server(port=8080):
-    socketio.run(app, port=port)
+    # todo: is there a way to avoid the unsage thing????
+    socketio.run(app, port=port, allow_unsafe_werkzeug=True)
     # app.run(port=port, host="0.0.0.0")
 
 
