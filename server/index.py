@@ -2,17 +2,13 @@
 
 import os
 from pathlib import Path
-from pprint import pprint
 from flask import Flask, send_from_directory
-
-# from flask_sock import Sock
 import time
 import json
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO, send
 
 current_dir = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=current_dir.parent / "client" / "public")
-# sock = Sock(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -29,6 +25,7 @@ def serve(path):
 cursors = {}
 canvas = {}
 
+
 def clear_cursors():
     try:
         for key in cursors:
@@ -36,7 +33,6 @@ def clear_cursors():
                 del cursors[key]
     except:
         # error thrown if a new cursor is added while it's iterating - just ignore that
-        # (not scalable)
         pass
 
 
@@ -52,12 +48,11 @@ def connect():
 
 @socketio.on("disconnect")
 def test_disconnect():
-    print("Client disconnected")
+    print("👋 Client disconnected")
 
 
 @socketio.on("json")
 def handle_message(message):
-
     parsed = json.loads(message)
     if parsed["type"] == "cursorPositions":
         cursors[parsed["payload"]["userID"]] = {
