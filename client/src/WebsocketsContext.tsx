@@ -69,7 +69,7 @@ export const WebsocketsProvider = ({
         window.location.href.includes('localhost') ||
         window.location.href.includes('127.0.0.1')
             ? 'ws://localhost:8080/ws'
-            : 'wss://doodle.rcdis.co:8080/ws';
+            : 'wss://doodle.rcdis.co/ws';
 
     const connect = () => {
         const socket = new WebSocket(WS_URL);
