@@ -2,11 +2,14 @@ import type { ReactNode } from 'react';
 import React, {
     createContext,
     useCallback,
+    useContext,
     useEffect,
     useRef,
     useState,
 } from 'react';
-import { Socket, io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+import { IdentityContext } from 'IdentityContext';
 
 export type WebsocketMessageType = {
     type: string;
@@ -15,24 +18,16 @@ export type WebsocketMessageType = {
 
 type wsMsgCallback = (event: any) => void;
 
-export enum ReadyState {
-    UNINSTANTIATED = -1,
-    CONNECTING = 0,
-    OPEN = 1,
-    CLOSING = 2,
-    CLOSED = 3,
-}
-
 type WebsocketsContextType = {
     addWSMessageListener: (fn: wsMsgCallback) => void;
     sendWSMessage: ({ type, payload }: WebsocketMessageType) => void;
-    readyState: ReadyState;
+    socketStatus: 'open' | 'closed';
 };
 
 export const WebsocketsContext = createContext<WebsocketsContextType>({
     addWSMessageListener: () => {},
     sendWSMessage: () => {},
-    readyState: -1,
+    socketStatus: 'closed',
 });
 
 export const WebsocketsProvider = ({
@@ -45,42 +40,38 @@ export const WebsocketsProvider = ({
     >;
 }) => {
     const websocketConnection = useRef<Socket | null>(null);
-    const [websocketReadyState, setWebsocketReadyState] =
-        useState<ReadyState>(-1);
+    const [websocketReadyState, setWebsocketReadyState] = useState<
+        'open' | 'closed'
+    >('closed');
     const [messageListenersToAttach, setMessageListenersToAttach] = useState<
         wsMsgCallback[]
     >([]);
-    const [attachedListeners, setAttachedListeners] = useState<wsMsgCallback[]>(
-        []
-    );
+
+    const { userID } = useContext(IdentityContext);
 
     const addWaitingListeners = useCallback(() => {
         if (messageListenersToAttach.length > 0) {
             messageListenersToAttach.forEach((fn) => {
-                websocketConnection.current!.addEventListener('message', fn);
+                websocketConnection.current!.on('json', fn);
             });
-            // save them in case we reconnect and need to re-add
-            setAttachedListeners(messageListenersToAttach);
             setMessageListenersToAttach([]);
         }
         return;
     }, [messageListenersToAttach]);
 
-    // const WS_URL =
-    //     window.location.href.includes('localhost') ||
-    //     window.location.href.includes('127.0.0.1')
-    //         ? 'ws://localhost:8080'
-    //         : 'wss://doodle.rcdis.co';
-
     const connect = useCallback(() => {
         const socket = io();
 
         socket.on('connect', () => {
-            setWebsocketReadyState(ReadyState.OPEN);
+            setWebsocketReadyState('open');
+            socket.emit(
+                'json',
+                JSON.stringify({ type: 'hello', payload: { userID } })
+            );
         });
 
         socket.on('disconnect', () => {
-            setWebsocketReadyState(ReadyState.CLOSED);
+            setWebsocketReadyState('closed');
         });
 
         socket.on('json', (message) => {
@@ -91,47 +82,22 @@ export const WebsocketsProvider = ({
         });
 
         websocketConnection.current = socket;
-        // return socket.readyState;
-        return 1;
-    }, [setInitialCanvasContent]);
-
-    // TODO this is a mess
-    const reconnect = useCallback(() => {
-        if (websocketConnection?.current?.readyState === ReadyState.OPEN) {
-            return;
-        }
-
-        const socketState = connect();
-
-        if (
-            socketState === ReadyState.CLOSED ||
-            socketState === ReadyState.CONNECTING
-        ) {
-            setTimeout(() => reconnect(), 3000);
-        }
-    }, [connect]);
+    }, [setInitialCanvasContent, userID]);
 
     // Initial connection
     useEffect(() => {
         if (!websocketConnection.current) {
-            const socketState = connect();
-            setWebsocketReadyState(socketState);
+            connect();
         }
 
-        // bug in dev mode?? https://github.com/miguelgrinberg/flask-sock/issues/70
-        // commenting this out doesnt fix it though
-        return () => websocketConnection.current?.close();
+        // return () => websocketConnection.current?.close();
     }, [connect, setInitialCanvasContent]);
 
     useEffect(() => {
-        if (websocketReadyState === ReadyState.OPEN) {
+        if (websocketReadyState === 'open') {
             addWaitingListeners();
         }
-
-        if (websocketReadyState === ReadyState.CLOSED) {
-            reconnect();
-        }
-    }, [addWaitingListeners, reconnect, websocketReadyState]);
+    }, [addWaitingListeners, websocketReadyState]);
 
     const addWSMessageListener = (fn: wsMsgCallback) => {
         if (!websocketConnection.current) {
@@ -150,7 +116,7 @@ export const WebsocketsProvider = ({
     const contextValue = {
         addWSMessageListener,
         sendWSMessage,
-        readyState: websocketReadyState,
+        socketStatus: websocketReadyState,
     };
 
     // todo - if connection isn't established?

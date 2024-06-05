@@ -11,7 +11,7 @@ import {
     resetLocalCanvas,
 } from 'helpers/drawing';
 import { Cursors } from 'Cursors';
-import { ReadyState, WebsocketsContext } from 'WebsocketsContext';
+import { WebsocketsContext } from 'WebsocketsContext';
 
 export const LENGTH = 720;
 
@@ -44,7 +44,7 @@ export const Canvas = ({
     const [drawing, setDrawing] = useState(false);
     const [currentColour, setCurrentColour] = useState('000000');
 
-    const { sendWSMessage, addWSMessageListener, readyState } =
+    const { sendWSMessage, addWSMessageListener, socketStatus } =
         useContext(WebsocketsContext);
 
     const ref = useRef<HTMLCanvasElement>(null);
@@ -70,10 +70,10 @@ export const Canvas = ({
     }, [addWSMessageListener]);
 
     useEffect(() => {
-        if (readyState === ReadyState.OPEN) {
+        if (socketStatus === 'open') {
             paintWholeCanvas(ref.current!, initialCanvasState);
         }
-    }, [initialCanvasState, readyState]);
+    }, [initialCanvasState, socketStatus]);
 
     const lastPixelChange = useRef<Pixel | null>(null);
 
@@ -100,7 +100,7 @@ export const Canvas = ({
                             background: `#${colour}`,
                             width: '30px',
                             height: '30px',
-                            border: '1px solid black',
+                            border: `1px solid ${colour === currentColour ? 'white' : 'black'}`,
                         }}
                         onClick={() => setCurrentColour(colour)}
                     ></div>
@@ -114,6 +114,9 @@ export const Canvas = ({
                     onMouseDown={(e) =>
                         onDrawStart(e, ref.current!, setDrawing)
                     }
+                    onTouchStart={(e) =>
+                        onDrawStart(e, ref.current!, setDrawing)
+                    }
                     onMouseMove={(e) =>
                         onDraw({
                             e,
@@ -124,7 +127,18 @@ export const Canvas = ({
                             lastPixelChange: lastPixelChange,
                         })
                     }
+                    onTouchMove={(e) =>
+                        onDraw({
+                            e,
+                            canvas: ref.current!,
+                            drawing,
+                            colour: currentColour,
+                            sendWSMessage,
+                            lastPixelChange: lastPixelChange,
+                        })
+                    }
                     onMouseUp={() => onDrawEnd(ref.current!, setDrawing)}
+                    onTouchEnd={() => onDrawEnd(ref.current!, setDrawing)}
                     onClick={(e) =>
                         onClick({
                             e,
@@ -134,7 +148,7 @@ export const Canvas = ({
                             lastPixelChange: lastPixelChange,
                         })
                     }
-                    style={{ border: '1px solid black' }}
+                    style={{ border: '1px solid black', touchAction: 'none' }}
                 ></canvas>
                 <Cursors canvasRef={ref} />
             </div>

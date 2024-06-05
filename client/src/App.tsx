@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from 'Canvas';
 import { WebsocketsProvider } from 'WebsocketsContext';
+import { IdentityProvider } from 'IdentityContext';
 
 const App = () => {
     const [initialCanvasContent, setInitialCanvasContent] = useState<
@@ -10,11 +11,13 @@ const App = () => {
 
     return (
         <>
-            <WebsocketsProvider
-                setInitialCanvasContent={setInitialCanvasContent}
-            >
-                <Canvas initialCanvasState={initialCanvasContent} />
-            </WebsocketsProvider>
+            <IdentityProvider>
+                <WebsocketsProvider
+                    setInitialCanvasContent={setInitialCanvasContent}
+                >
+                    <Canvas initialCanvasState={initialCanvasContent} />
+                </WebsocketsProvider>
+            </IdentityProvider>
         </>
     );
 };

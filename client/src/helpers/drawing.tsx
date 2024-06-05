@@ -1,4 +1,5 @@
-import type { MouseEvent } from 'react';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import type { MouseEvent, TouchEvent } from 'react';
 import type { Pixel } from 'Canvas';
 import { LENGTH } from 'Canvas';
 import type { WebsocketMessageType } from 'WebsocketsContext';
@@ -26,7 +27,7 @@ export const onDraw = ({
     sendWSMessage,
     lastPixelChange,
 }: {
-    e: MouseEvent;
+    e: MouseEvent | TouchEvent;
     canvas: HTMLCanvasElement;
     drawing: boolean;
     colour: string;
@@ -36,8 +37,29 @@ export const onDraw = ({
     if (!drawing) {
         return;
     }
+
+    let clientX: number;
+    let clientY: number;
+
+    if (e.nativeEvent instanceof TouchEvent) {
+        clientX = e.nativeEvent.touches[0].clientX;
+        clientY = e.nativeEvent.touches[0].clientY;
+    }
+
+    if (e.nativeEvent instanceof MouseEvent) {
+        clientX = e.nativeEvent.clientX;
+        clientY = e.nativeEvent.clientY;
+    }
+
     // TODO: try and fill in gaps when mouse is continually held down but moved fast?
-    fillPixel({ e, canvas, colour, sendWSMessage, lastPixelChange });
+    fillPixel({
+        clientX: clientX!,
+        clientY: clientY!,
+        canvas,
+        colour,
+        sendWSMessage,
+        lastPixelChange,
+    });
 };
 
 export const onClick = ({
@@ -53,7 +75,15 @@ export const onClick = ({
     sendWSMessage: (message: WebsocketMessageType) => void;
     lastPixelChange: React.MutableRefObject<Pixel | null>;
 }) => {
-    fillPixel({ e, canvas, colour, sendWSMessage, lastPixelChange });
+    const { clientX, clientY } = e;
+    fillPixel({
+        clientX,
+        clientY,
+        canvas,
+        colour,
+        sendWSMessage,
+        lastPixelChange,
+    });
 };
 
 export const onDrawEnd = (
@@ -70,13 +100,15 @@ export const onDrawEnd = (
 
 // TODO: this shouldn't overwrite borders
 export const fillPixel = ({
-    e,
+    clientX,
+    clientY,
     canvas,
     colour,
     sendWSMessage,
     lastPixelChange,
 }: {
-    e: MouseEvent;
+    clientX: number;
+    clientY: number;
     canvas: HTMLCanvasElement;
     colour: string;
     sendWSMessage: (message: WebsocketMessageType) => void;
@@ -90,8 +122,8 @@ export const fillPixel = ({
 
     const elPosition = canvas.getBoundingClientRect();
 
-    const xPos = e.clientX - elPosition.x;
-    const yPos = e.clientY - elPosition.y;
+    const xPos = clientX - elPosition.x;
+    const yPos = clientY - elPosition.y;
 
     const lowerX = Math.floor(xPos / 6) * 6;
     const lowerY = Math.floor(yPos / 6) * 6;

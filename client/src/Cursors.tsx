@@ -9,17 +9,7 @@ import React, {
 import { Cursor } from 'Cursor';
 import { WebsocketsContext } from 'WebsocketsContext';
 import { LENGTH } from 'Canvas';
-
-const CURSOR_COLOURS = [
-    '000000',
-    'FF0000',
-    'FFFF00',
-    '00FF00',
-    '00FFFF',
-    '0000FF',
-    'FF00FF',
-    'FFFFFF',
-];
+import { IdentityContext } from 'IdentityContext';
 
 function debounce<TArgs extends unknown[]>(
     delay: number,
@@ -40,9 +30,7 @@ export const Cursors = ({
 }: {
     canvasRef: React.RefObject<HTMLCanvasElement>;
 }) => {
-    const [userID, _setUserID] = useState(
-        Math.floor(Math.random() * 100).toString()
-    );
+    const { userID } = useContext(IdentityContext);
 
     const { sendWSMessage, addWSMessageListener } =
         useContext(WebsocketsContext);
@@ -53,6 +41,9 @@ export const Cursors = ({
     const [cursorPostitions, setCursorPositions] = useState<
         Record<string, cursorPosition>
     >({});
+    const [cursorColours, setCursorColours] = useState<Record<string, string>>(
+        {}
+    );
 
     const myCursorPosition = useRef<cursorPosition>({ x: 0, y: 0 });
 
@@ -76,24 +67,16 @@ export const Cursors = ({
 
             myCursorPosition.current = { x, y };
 
-            // Only report position if cursor is over canvas - otherwise hide it
-            // if (x >= 0 && x <= LENGTH && y >= 0 && y <= LENGTH) {
             sendWSMessage({
                 payload: { position: { x, y }, userID },
                 type: 'cursorPositions',
             });
-            // } else {
-            //     sendWSMessage({
-            //         type: 'removeCursor',
-            //         payload: { userID },
-            //     });
-            // }
         },
         [canvasRef, sendWSMessage, userID]
     );
 
     const debouncedComputeCursorPositions = useMemo(
-        () => debounce(10, reportCursorPosition),
+        () => debounce(5, reportCursorPosition),
         [reportCursorPosition]
     );
 
@@ -106,16 +89,8 @@ export const Cursors = ({
             if (serverMessage.type === 'cursorPositions') {
                 setCursorPositions(serverMessage.payload);
             }
-        });
-
-        // not sure this is really necessary now i've just stopped rendering ones out of bounds
-        addWSMessageListener((event) => {
-            const serverMessage = JSON.parse(event);
-            if (serverMessage.type === 'removeCursor') {
-                // filter out that userid
-                const newCursors = { ...cursorPostitions };
-                delete newCursors[serverMessage.payload.userID];
-                setCursorPositions(newCursors);
+            if (serverMessage.type === 'cursorColours') {
+                setCursorColours(serverMessage.payload);
             }
         });
     }, [
@@ -123,40 +98,23 @@ export const Cursors = ({
         cursorPostitions,
         debouncedComputeCursorPositions,
         reportCursorPosition,
+        userID,
     ]);
 
     const cursors = useMemo(
         () =>
-            // todo: this must be expensive
-            Object.keys(cursorPostitions)
-                .filter((key) => {
-                    if (key === userID) {
-                        return false;
-                    }
-
-                    const { x, y } = cursorPostitions[key];
-
-                    return x >= 0 && x <= LENGTH && y >= 0 && y <= LENGTH;
-                })
-                .map((key) => {
-                    // TODO: 100 because we are currently generating user ids as random nos 0 - 99
-                    const colour =
-                        CURSOR_COLOURS[
-                            Math.floor(
-                                (Number(key) % 100) /
-                                    (100 / CURSOR_COLOURS.length)
-                            )
-                        ];
-                    return (
-                        <Cursor
-                            key={key}
-                            top={cursorPostitions[key].y}
-                            left={cursorPostitions[key].x}
-                            fill={colour}
-                        />
-                    );
-                }),
-        [cursorPostitions, userID]
+            Object.keys(cursorPostitions).map((key) => {
+                return (
+                    <Cursor
+                        key={key}
+                        top={cursorPostitions[key].y}
+                        left={cursorPostitions[key].x}
+                        cursorUserID={key}
+                        colour={cursorColours[key]}
+                    />
+                );
+            }),
+        [cursorColours, cursorPostitions]
     );
 
     return (
