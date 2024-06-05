@@ -11,8 +11,6 @@ current_dir = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=current_dir.parent / "client" / "public")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# lol hiiiiiii
-
 
 # Serve React App
 @app.route("/", defaults={"path": ""})
@@ -62,10 +60,6 @@ def handle_message(message):
             "timestamp": int(time.time()),
         }
         broadcast({"payload": cursors, "type": "cursorPositions"})
-    # elif parsed["type"] == 'removeCursor':
-    #     if cursors[parsed["payload"]["userID"]]:
-    #         del cursors[parsed["payload"]["userID"]]
-    #     await broadcast(parsed)
     elif parsed["type"] == "resetCanvas":
         canvas.clear()
         broadcast(parsed)
@@ -77,9 +71,6 @@ def handle_message(message):
     else:
         print(f"Received unknown message {message}")
 
-
-# hiiiiii
-# hii
 
 if __name__ == "__main__":
     # default 5000 is already in use by Apple AirPlay
