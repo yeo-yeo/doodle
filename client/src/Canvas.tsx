@@ -12,6 +12,7 @@ import {
 } from 'helpers/drawing';
 import { Cursors } from 'Cursors';
 import { WebsocketsContext } from 'WebsocketsContext';
+import { Link } from 'react-router-dom';
 
 export const LENGTH = 720;
 
@@ -152,6 +153,9 @@ export const Canvas = ({
                 ></canvas>
                 <Cursors canvasRef={ref} />
             </div>
+            <Link to="/gallery" style={{ color: 'yellow', marginTop: '8px' }}>
+                Gallery
+            </Link>
         </div>
     );
 };

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import { Canvas } from 'Canvas';
 import { WebsocketsProvider } from 'WebsocketsContext';
 import { IdentityProvider } from 'IdentityContext';
 
-const App = () => {
+export const App = () => {
     const [initialCanvasContent, setInitialCanvasContent] = useState<
         Record<string, string>
     >({});
@@ -21,7 +20,3 @@ const App = () => {
         </>
     );
 };
-
-const container = document.getElementById('root');
-const root = createRoot(container!);
-root.render(<App />);
