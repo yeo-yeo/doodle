@@ -1,2 +1,5 @@
-**/node_modules
-client/public/bundle.js
+/**/node_modules
+/client/public/**/*.js
+/client/public/**/*.map
+/lambda
+/k8s
