@@ -1,5 +1,6 @@
 .DS_Store
-/client/node_modules
+/**/node_modules
 /client/public/**/*.js
 /client/public/**/*.map
 __pycache__
+/lambda/dist

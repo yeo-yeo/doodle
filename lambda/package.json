@@ -1,0 +1,22 @@
+{
+    "name": "lambda",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "./build.sh",
+        "deploy": "./deploy.sh",
+        "dev": "nodemon dist/server.cjs --watch dist --delay 0.5"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "esbuild": "^0.21.4",
+        "typescript": "^5.4.5"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.591.0",
+        "@sparticuz/chromium": "^123.0.1",
+        "puppeteer-core": "^22.10.0"
+    }
+}

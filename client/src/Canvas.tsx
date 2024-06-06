@@ -152,14 +152,6 @@ export const Canvas = ({
                 ></canvas>
                 <Cursors canvasRef={ref} />
             </div>
-            <button
-                onClick={() => {
-                    sendWSMessage({ type: 'resetCanvas', payload: {} });
-                    resetLocalCanvas(ref.current!);
-                }}
-            >
-                Reset canvas
-            </button>
         </div>
     );
 };

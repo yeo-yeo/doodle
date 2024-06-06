@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
 import time
 import json
 from flask_socketio import SocketIO, send
@@ -20,6 +20,7 @@ def cleanup():
             for key in cursor_positions:
                 if cursor_positions[key]["timestamp"] < int(time.time()) - 5:
                     del cursor_positions[key]
+                    del cursor_colours[key]
         except:
             # error thrown if a new cursor is added while it's iterating - just ignore that
             # (not scalable)
@@ -41,6 +42,23 @@ cursor_colours = {}
 cursor_positions = {}
 canvas = {}
 
+
+@app.route("/get-canvas")
+def return_canvas():
+    return json.dumps(canvas)
+
+
+@app.route("/set-canvas", methods=["POST"])
+def set_canvas():
+    try:
+        global canvas
+        data = request.get_json()
+        print(f"Setting canvas to {data}")
+        # validation is for chumps
+        canvas = data
+        return "ok"
+    except:
+        return "error"
 
 def clear_cursors():
     try:
