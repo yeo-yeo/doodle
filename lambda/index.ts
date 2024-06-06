@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
+import fetch from "node-fetch";
 
 // Optional: If you'd like to use the new headless mode. "shell" is the default.
 // NOTE: Because we build the shell binary, this option does not work.
@@ -65,10 +66,7 @@ export const handler = async () => {
       new GetObjectCommand({ Bucket: "doodle-images", Key: imageListKey })
     );
 
-    // double parse?!
-    const imageList = JSON.parse(
-      JSON.parse(await file.Body!.transformToString())
-    );
+    const imageList = JSON.parse(await file.Body!.transformToString());
 
     console.log("Retrieved image list");
 
@@ -83,7 +81,15 @@ export const handler = async () => {
       })
     );
 
-    console.log("Updated image list. Finishing up.");
+    console.log("Updated image list. Resetting canvas!");
+
+    await fetch("https://doodle.recurse.com/set-canvas", {
+      method: "POST",
+      body: JSON.stringify({}),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     for (const page of await browser.pages()) {
       await page.close();
