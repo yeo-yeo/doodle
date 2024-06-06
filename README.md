@@ -1,6 +1,6 @@
 # Doodle
 
-## What
+## What
 A collaborative pixel art app. Includes live curors and gallery of previous doodles.
 
 ## Stack
