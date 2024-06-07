@@ -22,6 +22,16 @@ export const handler = async () => {
   const client = new S3Client({ region: "eu-west-2" });
 
   try {
+    // check if there's actually anything there - if not, don't bother
+    const isEmptyRes = await fetch("https://doodle.recurse.com/is-empty").then(
+      (res) => res.text()
+    );
+
+    if (isEmptyRes === "true") {
+      console.log("Nothing on the canvas, nothing to do!");
+      return;
+    }
+
     // Initialise browser
     const browser = await puppeteer.launch({
       args: chromium.args,

@@ -60,6 +60,15 @@ def set_canvas():
     except:
         return "error"
 
+
+@app.route("/is-empty")
+def is_empty():
+    if not bool(canvas):
+        return "true"
+    else:
+        return "false"
+
+
 def clear_cursors():
     try:
         for key in cursor_positions:

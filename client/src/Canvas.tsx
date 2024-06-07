@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import {
     drawGrid,
@@ -12,7 +13,6 @@ import {
 } from 'helpers/drawing';
 import { Cursors } from 'Cursors';
 import { WebsocketsContext } from 'WebsocketsContext';
-import { Link } from 'react-router-dom';
 
 export const LENGTH = 720;
 

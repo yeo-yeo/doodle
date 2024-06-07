@@ -11,7 +11,7 @@ export const Gallery = () => {
             .then((res) => res.json())
             .then((list) => setImageList(list.reverse()))
             .catch((e) => console.error(e));
-    });
+    }, []);
 
     return (
         <div
@@ -22,21 +22,31 @@ export const Gallery = () => {
             }}
         >
             <h2 style={{ color: 'yellow' }}>Previous Doodles</h2>
-            {/* todo: virtualise list and lay out better */}
+            {/* todo: virtualise list */}
             {imageList ? (
-                imageList.map((url) => (
-                    <img
-                        key={url}
-                        src={`${S3_BASE_URL}/${encodeURIComponent(url)}`}
-                        style={{
-                            backgroundColor: 'white',
-                            width: '300px',
-                            margin: '16px',
-                        }}
-                    />
-                ))
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        width: '800px',
+                        justifyContent: 'center',
+                        gap: '32px',
+                        margin: '16px',
+                    }}
+                >
+                    {imageList.map((url) => (
+                        <img
+                            key={url}
+                            src={`${S3_BASE_URL}/${encodeURIComponent(url)}`}
+                            style={{
+                                backgroundColor: 'white',
+                                width: '40%',
+                            }}
+                        />
+                    ))}
+                </div>
             ) : (
-                <p>Loading...</p>
+                <p style={{ color: 'white' }}>Loading...</p>
             )}
             <Link to="/" style={{ color: 'white' }}>
                 Back
