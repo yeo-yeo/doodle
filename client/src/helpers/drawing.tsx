@@ -198,7 +198,7 @@ export const drawGrid = (canvas: HTMLCanvasElement) => {
         return;
     }
 
-    ctx.strokeStyle = '#BBBBBB';
+    ctx.strokeStyle = '#666666';
 
     // vertical grid lines
     for (let i = 0; i < LENGTH; i += 6) {

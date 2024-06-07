@@ -22,6 +22,7 @@ export const handler = async () => {
   const client = new S3Client({ region: "eu-west-2" });
 
   try {
+    // Initialise browser
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -31,12 +32,14 @@ export const handler = async () => {
       headless: chromium.headless,
     });
 
+    // Go the page
     const page = await browser.newPage();
     await page.goto("https://doodle.recurse.com");
 
-    // so the canvas can get set up properly first
+    // Wait so the canvas can get set up properly first
     await wait(3000);
 
+    // Convert image to string
     const imageURL = await page.$eval("canvas", (el) => el.toDataURL());
 
     console.log("Got image URL", imageURL);
@@ -48,6 +51,7 @@ export const handler = async () => {
 
     const isoTimeDate = new Date().toISOString();
 
+    // Store image in S3 with timestamp as key
     await client.send(
       new PutObjectCommand({
         Bucket: "doodle-images",
@@ -58,8 +62,7 @@ export const handler = async () => {
       })
     );
 
-    // Update the image file list
-
+    // Update the image file list so the gallery knows what to load
     const imageListKey = "imagelist.json";
 
     const file = await client.send(
@@ -83,6 +86,7 @@ export const handler = async () => {
 
     console.log("Updated image list. Resetting canvas!");
 
+    // 🥲 fresh new canvas time
     await fetch("https://doodle.recurse.com/set-canvas", {
       method: "POST",
       body: JSON.stringify({}),
@@ -91,6 +95,7 @@ export const handler = async () => {
       },
     });
 
+    // Apparently this might be needed to stop it hanging sometimes
     for (const page of await browser.pages()) {
       await page.close();
     }
